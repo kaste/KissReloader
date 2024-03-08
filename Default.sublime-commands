@@ -1,0 +1,6 @@
+[
+    {
+        "caption": "kiss-reload: Reload Current Package",
+        "command": "kiss_reloader_reload_current_package"
+    },
+]
