@@ -7,14 +7,27 @@ import sublime_plugin
 
 def reload_(package_name: str, plugin_file: Path):
     # Clear module cache to force reloading all modules of this package.
+    try:
+        content = plugin_file.read_text()
+    except Exception:
+        has_marker = False
+    else:
+        # The marker indicates by convention that just touching
+        # the file reloads the package.  That typically means,
+        # it has the reloader implemented and just need our command
+        # to trigger it.
+        has_marker = "# kiss-reloader" in content
+
     plugin_name = f"{package_name}.{plugin_file.stem}"
-    prefix = package_name + "."  # don't clear the base package
-    for module_name in [
-        module_name
-        for module_name in sys.modules
-        if module_name.startswith(prefix) and module_name != plugin_name
-    ]:
-        del sys.modules[module_name]
+    if not has_marker:
+        # kiss-reloader:
+        prefix = package_name + "."  # don't clear the base package
+        for module_name in [
+            module_name
+            for module_name in sys.modules
+            if module_name.startswith(prefix) and module_name != plugin_name
+        ]:
+            del sys.modules[module_name]
 
     plugin_file.touch()
 
