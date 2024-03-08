@@ -1,6 +1,6 @@
 # KissReloader
 
-The plugin packages a new simplified reloader, originally invented by @deathaxe.
+The plugin packages a new simplified reloader, originally invented by [@deathaxe](https://github.com/deathaxe).
 
 Choose `kiss-reload: Reload Current Package` from the Command Palette to reload
 the plugin you're currently looking at.
