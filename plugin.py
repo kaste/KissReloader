@@ -7,11 +7,12 @@ import sublime_plugin
 
 def reload_(package_name: str, plugin_file: Path):
     # Clear module cache to force reloading all modules of this package.
+    plugin_name = f"{package_name}.{plugin_file.stem}"
     prefix = package_name + "."  # don't clear the base package
     for module_name in [
         module_name
         for module_name in sys.modules
-        if module_name.startswith(prefix) and module_name != __name__
+        if module_name.startswith(prefix) and module_name != plugin_name
     ]:
         del sys.modules[module_name]
 
