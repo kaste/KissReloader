@@ -4,32 +4,38 @@ import sys
 import sublime
 import sublime_plugin
 
+from typing import List
 
-def reload_(package_name: str, plugin_file: Path):
+
+def reload_(package_name: str, plugin_files: List[Path]):
     # Clear module cache to force reloading all modules of this package.
-    try:
-        content = plugin_file.read_text()
-    except Exception:
-        has_marker = False
-    else:
-        # The marker indicates by convention that just touching
-        # the file reloads the package.  That typically means,
-        # it has the reloader implemented and just need our command
-        # to trigger it.
-        has_marker = "# kiss-reloader" in content
-
-    plugin_name = f"{package_name}.{plugin_file.stem}"
+    plugin_names = {f"{package_name}.{file.stem}" for file in plugin_files}
+    has_marker = any(map(file_has_marker, plugin_files))
     if not has_marker:
         # kiss-reloader:
         prefix = package_name + "."  # don't clear the base package
         for module_name in [
             module_name
             for module_name in sys.modules
-            if module_name.startswith(prefix) and module_name != plugin_name
+            if module_name.startswith(prefix) and module_name not in plugin_names
         ]:
             del sys.modules[module_name]
 
-    plugin_file.touch()
+    for file in plugin_files:
+        file.touch()
+
+
+def file_has_marker(file: Path) -> bool:
+    try:
+        content = file.read_text()
+    except Exception:
+        return False
+    else:
+        # The marker indicates by convention that just touching
+        # the file reloads the package.  That typically means,
+        # it has the reloader implemented and just need our command
+        # to trigger it.
+        return "# kiss-reloader" in content
 
 
 class kiss_reloader_reload(sublime_plugin.ApplicationCommand):
@@ -40,14 +46,11 @@ class kiss_reloader_reload(sublime_plugin.ApplicationCommand):
             print(f"Can't find installation for {package_name!r}.  {package_directory} does not exist.")
             return
 
-        python_files = [path for path in package_directory.glob("*.py") if path.name != "__init__.py"]
-        if len(python_files) > 1:
-            print(f"Skip reloading. {package_name!r} has more than one entrypoint in its root directory.")
-            return
-
+        python_files = sorted([path for path in package_directory.glob("*.py")])
         print("package_directory:", package_directory)
-        print("plugin_file:", python_files[0])
-        reload_(package_name, python_files[0])
+        s = "s" if len(python_files) > 1 else ""
+        print(f"plugin_file{s}:", ", ".join(f.name for f in python_files))
+        reload_(package_name, python_files)
 
 
 class kiss_reloader_reload_current_package(sublime_plugin.WindowCommand):
