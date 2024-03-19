@@ -47,8 +47,8 @@ class kiss_reloader_reload(sublime_plugin.ApplicationCommand):
             return
 
         python_files = sorted([path for path in package_directory.glob("*.py")])
-        print("package_directory:", package_directory)
         s = "s" if len(python_files) > 1 else ""
+        print("package_directory:", package_directory)
         print(f"plugin_file{s}:", ", ".join(f.name for f in python_files))
         reload_(package_name, python_files)
 
