@@ -17,13 +17,13 @@ There is also an `ApplicationCommand` to reload a specific package at will, e.g.
 # Add the reloader to your package
 
 You may want to add reloader code to your main/root plugin so it actually reloads
-automatically if Package Control gets an update.  Just add this to your plugin:
+automatically if Package Control pushes an update.  Just add this to your plugin:
 
 ```python
 import sys
 
 # kiss-reloader:
-prefix = __package__ + "."  # don't clear the base package
+prefix = __spec__.parent + "."  # don't clear the base package
 for module_name in [
     module_name
     for module_name in sys.modules
@@ -34,3 +34,5 @@ for module_name in [
 
 `KissReloader` will watch out for the conventional "# kiss-reloader:" comment
 and prevent a double reload.
+
+Note: `__spec__.parent` is formerly known as `__package__`
