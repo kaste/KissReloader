@@ -55,6 +55,10 @@ class kiss_reloader_reload(sublime_plugin.ApplicationCommand):
         print("package_directory:", package_directory)
         print(f"plugin_file{s}:", ", ".join(f.name for f in python_files))
         reload_(package_name, python_files)
+        sublime.set_timeout(
+            lambda: sublime.active_window().status_message(f"{package_name} has 🙌 reloaded."),
+            1000
+        )
 
 
 class kiss_reloader_reload_current_package(sublime_plugin.WindowCommand):
