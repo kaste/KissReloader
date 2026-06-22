@@ -112,18 +112,14 @@ letting imports run normally.
 import importlib.abc
 import importlib.machinery
 import sys
+from contextlib import nullcontext
 from types import ModuleType
 
 
 # kiss-reloader
 class InPlaceReloader(importlib.abc.MetaPathFinder, importlib.abc.Loader):
-    def __init__(self, package_name=__spec__.parent, plugin_name=__name__):
-        prefix = package_name + "."
-        self.modules = {
-            name: module
-            for name, module in sys.modules.items()
-            if name.startswith(prefix) and name != plugin_name
-        }
+    def __init__(self, modules):
+        self.modules = modules
         self.loaders = {}
 
     def __enter__(self):
@@ -170,8 +166,18 @@ class InPlaceReloader(importlib.abc.MetaPathFinder, importlib.abc.Loader):
                 delattr(parent, attr)
 
 
-with InPlaceReloader():
-    # import your package here ...
+def reloader(package_name=__spec__.parent, plugin_name=__name__):
+    prefix = package_name + "."
+    modules = {
+        name: module
+        for name, module in sys.modules.items()
+        if name.startswith(prefix) and name != plugin_name
+    }
+    return InPlaceReloader(modules) if modules else nullcontext()
+
+
+with reloader():
+    # import your package here ... e.g.
     from .core.commands import *
 ```
 
@@ -199,3 +205,8 @@ Note: The parent attribute cleanup is important.  Without it, an import such as
 `from package.core import store` can reuse `package.core.store` directly from
 an already loaded parent package and never ask the import machinery to reload
 `package.core.store`.
+
+Note: The `reloader()` indirection is another mouthful.  It is not strictly
+necessary because `InPlaceReloader({})` would also work with an empty dict.
+However, it would add a tiny cost by installing a custom import hook.  The
+zero-cost abstraction avoids that cost on initial load/startup.
