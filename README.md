@@ -156,12 +156,18 @@ class InPlaceReloader(importlib.abc.MetaPathFinder, importlib.abc.Loader):
         return self.modules[spec.name]
 
     def exec_module(self, module):
-        self.loaders[module.__name__].exec_module(module)
+        loader = self.loaders[module.__name__]
+        if hasattr(loader, "exec_module"):
+            loader.exec_module(module)
+        else:
+            loader.load_module(module.__name__)  # Python 3.8
 
     def clear_parent_module_attributes(self):
         for name, module in self.modules.items():
             parent_name, _, attr = name.rpartition(".")
             parent = self.modules.get(parent_name)
+            if parent is None:
+                parent = sys.modules.get(parent_name)
             if isinstance(parent, ModuleType) and getattr(parent, attr, None) is module:
                 delattr(parent, attr)
 
@@ -189,6 +195,8 @@ What it does:
 - intercepts imports for those modules
 - returns the old module object from `create_module`
 - executes fresh source into that old module object
+- falls back to the legacy `load_module()` API for older loaders such as
+  Python 3.8's `zipimporter`
 
 Pros:
 
@@ -204,7 +212,9 @@ Cons:
 Note: The parent attribute cleanup is important.  Without it, an import such as
 `from package.core import store` can reuse `package.core.store` directly from
 an already loaded parent package and never ask the import machinery to reload
-`package.core.store`.
+`package.core.store`.  The `sys.modules` fallback handles direct child imports
+such as `from package import core`.  The base package is not in `modules`, but
+it still owns those child attributes.
 
 Note: The `reloader()` indirection is another mouthful.  It is not strictly
 necessary because `InPlaceReloader({})` would also work with an empty dict.
