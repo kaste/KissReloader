@@ -99,6 +99,8 @@ class kiss_reloader_reload_current_package(sublime_plugin.WindowCommand):
                 package_name = Path(candidate).relative_to(pp).parts[0]
             except LookupError:
                 ...
+            except ValueError:
+                ...
             else:
                 print("reload:", package_name)
                 sublime.run_command("kiss_reloader_reload", {"package_name": package_name})
